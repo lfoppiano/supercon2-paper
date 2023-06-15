@@ -11,6 +11,7 @@
 % \author[3]{Tou Taku}
 % \author[3]{Kensei Terashima}
 % \author[3]{Chikako Sakai}
+% \author[3]{Wei-Sheng Wang}
 % \author[2]{Toshiyuki Amagasa}
 % \author[3]{Takano Yoshihiko}
 % \author[1]{Ishii Masashi}
@@ -33,13 +34,13 @@ The adoption of new statistical methodologies for materials informatics (MI) usi
 In materials science, however, it is still a common practice to extract data manually from scientific articles, like in the Pauling File~\cite{Blokhin2018ThePF_paulingFile}, AFLOW~\cite{aflowcurtarolo2012aflow} databases for example. 
 Large aggregated databases created more recently, such as the Material Project~\cite{materialsprojectJain2013}, combine human validation with automatic processes to produce initial predictions and gather materials data. 
 
-[Terashima: DFT / calculated data is more popular. - Experimental extracted data is less used]
+[Terashima: to elaborate more about -> DFT / calculated data is more popular. - Experimental extracted data is less used]
 
 At first glance, it may seem more straightforward to create a single manual procedure that can extract information from diverse sources like plots, tables, and text all at once. However, while this approach may be viable in the short term, its sustainability diminishes over time. 
 On the other hand, constructing an automated process to accomplish this task presents many challenges. In case of scientific publications, plots, tables and text necessitates different treatments, and the resulting outputs must be merged and verified manually. Despite the challenges, it is possible to transition gradually towards automation by implementing iterative steps. This iterative approach involves reducing human involvement progressively while simultaneously optimising the efficiency of required human actions. 
 
 In superconductors research, the gold standard database is SuperCon~\cite{SuperCon}, which was built manually over more than a decades from the National Institute for Materials Science (NIMS). 
-Despite being praised for its excellent quality in numerous reports~\cite{roter2020predicting, stanev_machine_2017, tran2022machine, konno2021deep}, the updates of SuperCon have become increasingly challenging due to the high publication rate. However, in response to the need for a more efficient approach to sustain productivity, we embarked on the development of an automated system for extracting material and property information from text contained in relevant scientific publications~\cite{doi:10.1080/27660400.2022.2153633}. This automated process enabled the rapid creation of SuperCon2, a comprehensive database of superconductors containing over 35,000 entries, accomplished in just a few days. 
+Despite being praised for its excellent quality in numerous reports~\cite{roter2020predicting, stanev_machine_2017, tran2022machine, konno2021deep}, the updates of SuperCon have become increasingly challenging due to the high publication rate. However, in response to the need for a more efficient approach to sustain productivity, we embarked on the development of an automated system for extracting material and property information from text contained in relevant scientific publications~\cite{lfoppiano2023automatic}. This automated process enabled the rapid creation of SuperCon2, a comprehensive database of superconductors containing over 35,000 entries, accomplished in just a few days. 
 
 Ensure the same quality as SuperCon while automating the extraction of structured superconductors data poses significant challenges. 
 We developed a web interface designed to facilitate the curation process, involving the active and ongoing management of data through its lifecycle of interest, specifically tailored for our superconductors database but open to potential adaptation other data structures. 
@@ -87,7 +88,7 @@ The interface automatically collects training data. When a record is corrected, 
   \label{fig:pdf-view}
 \end{figure}
 
-% \begin{figure}[h]
+% \begin{figure}[ht]
 %   \centering
 %   \includegraphics[width=1\textwidth]{images/supercon-curation-pdf-viewer} 
 %   \caption{PDF viewer. The page includes a table showcasing records extracted from the  current document, along with the PDF content and accompanying annotations.}
@@ -140,7 +141,7 @@ On the contrary, binary records, such as PDF documents, are not duplicated, for 
 
 The PDF documents binary content is used to generate a hash code of 8 character which is used to avoid duplicated PDF document, for linking documents and records within the database. Each record, and even each span have its own unique identifier which are calculated using the span attributes.
 
-\begin{figure}[h]
+\begin{figure}[ht]
   \centering
   \includegraphics[width=1\textwidth]{images/record-correction} 
   \caption{Schema of the curation workflow. Each state is characterised of two properties: type and status, and one action, as indicated on the top right corner. "Error type" indicate the action of storing the error type for that specific action.}
@@ -245,7 +246,7 @@ The second approach is to point to the related part of the PDF document decorate
 \subsubsection{Curation and processing logs}
 
 The Supercon\textsuperscript{2} interface records minimal information regarding the ingestion (processing log) and the curation process (curation log). 
-The processing log is filled-up when the data is ingested, it was build to have minimal functions able to explain why certain documents haven't been processed (Figure~\ref{fig:processing-log}). 
+The processing log is filled-up when the data is ingested, it was build to have minimal functions able to explain why certain documents haven't been processed (Figure~\ref{fig:processing-curation-log}). 
 Grobid was built focusing on speed and robustness, and contains several fail-safe mechanisms to avoid crashing the system when a document is either too big or does not contains valuable information, for example does not have any text. Old PDF documents (e.g. before 1990) are likely have been scanned and contains only images. 
 Examples of too big documents are dissertation thesis with more than 100 pages, that might be collected by mistake. 
 
@@ -254,11 +255,11 @@ Examples of too big documents are dissertation thesis with more than 100 pages, 
   \centering
   \includegraphics[width=1\textwidth]{images/processing-curation-log.png} 
   \caption{On the top: Processing log, showing the output of each operation (process document, create record) and the outcome with the exception or error should have occurred. On the bottom: Curation log, indicating each record, the number of updates, and the date/time of the last updates.}
-  \label{fig:processing-log}
+  \label{fig:processing-curation-log}
 \end{figure}
 
 The curation log provide a view on the corrections that are performed in an aggregated page. 
-The curation log shows all the records that have been updated and when. It includes also the history of each record (Figure~\ref{fig:curation-log}).
+The curation log shows all the records that have been updated and when. It includes also the history of each record (Figure~\ref{fig:processing-curation-log}).
 
 % \begin{figure}[ht]
 %   \centering
@@ -333,7 +334,7 @@ Examples are visualised by rows with their document hash and the status which ca
 The workflow does not require additional states, because the data can be exported from label-studio after corrected. 
 
 
-\begin{figure}[h]
+\begin{figure}[ht]
   \centering
   \includegraphics[width=1\textwidth]{images/training-data-viewer} 
   \caption{Training data view}
@@ -350,7 +351,7 @@ We merge curation with the base dataset because the curation dataset is very sma
 
 The obtained models are tested using a fixed holdout dataset we have designed in our previous work~\cite{lfoppiano2023automatic} and the evaluation scores are illustrated in Table~\ref{tab:evaluation-curation-training}.
 
-\begin{table}[h]
+\begin{table}[ht]
 \centering
 \begin{tabular}{|l|l|l|l|}
 \hline
