@@ -1,10 +1,23 @@
-\documentclass{article}
-
+\documentclass[a4paper]{article}
 \usepackage{graphicx}
 \usepackage{hyperref}
+\usepackage{authblk}
 
-\title{Semi-automatic SuperCon staging area for ingesting structured data collected from scientific literature}
-\author{Authors}
+\title{Semi-automatic staging area to feed SuperCon with high-quality structured data from scientific literature}
+\author[1]{Authors}
+% \author[1,2]{Luca Foppiano}
+% \author[1]{Tomoya Mato}
+% \author[4]{Pedro Ortiz Suarez}
+% \author[3]{Tou Taku}
+% \author[3]{Kensei Terashima}
+% \author[3]{Chikako Sakai}
+% \author[2]{Toshiyuki Amagasa}
+% \author[3]{Takano Yoshihiko}
+% \author[1]{Ishii Masashi}
+% \affil[1]{Materials Modelling Group, Data-driven Materials Research Field, Centre for Basic Research on Materials, NIMS, Japan}
+% \affil[2]{Knowledge and Data Engineering, Centre for Computational Sciences, University of Tsukuba, Japan}
+% \affil[3]{Nano Frontier Superconducting Materials Group, MANA, NIMS, Tsukuba, Japan}
+% \affil[4]{DFKI GmbH, Germany}
 
 \begin{document}
 
@@ -20,7 +33,7 @@ The adoption of new statistical methodologies for materials informatics (MI) usi
 In materials science, however, it is still a common practice to extract data manually from scientific articles, like in the Pauling File~\cite{Blokhin2018ThePF_paulingFile}, AFLOW~\cite{aflowcurtarolo2012aflow} databases for example. 
 Large aggregated databases created more recently, such as the Material Project~\cite{materialsprojectJain2013}, combine human validation with automatic processes to produce initial predictions and gather materials data. 
 
-[DFT / calculated data is more popular. - Experimental extracted data is less used]
+[Terashima: DFT / calculated data is more popular. - Experimental extracted data is less used]
 
 At first glance, it may seem more straightforward to create a single manual procedure that can extract information from diverse sources like plots, tables, and text all at once. However, while this approach may be viable in the short term, its sustainability diminishes over time. 
 On the other hand, constructing an automated process to accomplish this task presents many challenges. In case of scientific publications, plots, tables and text necessitates different treatments, and the resulting outputs must be merged and verified manually. Despite the challenges, it is possible to transition gradually towards automation by implementing iterative steps. This iterative approach involves reducing human involvement progressively while simultaneously optimising the efficiency of required human actions. 
@@ -38,8 +51,8 @@ This paper introduces our curation tool, SuperCon2, which serves as a data stagi
 Our contributions in this work are as follows:
 \begin{itemize}
     \item We designed a efficient scalable ingestion process for process batches of PDF documents,
-    \item We designed a set of anomaly detection scripts ....
-    \item We present a new interface specifically designed for data curation in materials science, 
+    \item We designed a lightweight anomaly detection process for fast outliers identification, 
+    \item We present a new interface designed for data curation in materials science, 
     \item We integrate the visualisation of the extracted materials-related entities with the PDF document viewer. This utilises coordinates extracted by Grobid~\cite{GROBID} and it was demonstrated in other fields by~\cite{wang2022hammer}. [Add more references] 
     \item We establish a feedback loop mechanism that generates training data at the sentence level based on the data correction process.
 \end{itemize}
@@ -61,18 +74,25 @@ The schema consists of two main classes: material information (material names, f
 \end{figure}
 
 
-During the curation process is often necessary to navigate back and forth to the related section to the extracted record that is being examined. The curation interface provide a document viewer combining a table with the extracted records and the viewer of their respective document (Figure~\ref{fig:curation-interface-pdf-viewer}). The viewer highlights the annotations that identify materials and properties, enabling users to easily locate and reference the extracted information within the document.
+During the curation process is often necessary to navigate back and forth to the related section to the extracted record that is being examined. The curation interface provide a document viewer combining a table with the extracted records and the viewer of their respective document (Figure~\ref{fig:pdf-view}). The viewer highlights the annotations that identify materials and properties, enabling users to easily locate and reference the extracted information within the document.
 
 Each record presented can be modified, removed, or flagged. The flagging was built with the idea of having two phases curation: in the first phase, the records are examined quickly mostly without checking the document information, and the users flags any record that judge incorrect. The second step, slower, the user goes through the invalid information and examine them thoughtfully correcting when needed and stepping back to the document to check the context. 
 
 The interface automatically collects training data. When a record is corrected, the information pertaining to the sentence, spans (annotations), and tokens (including layout information, fonts, and other features) is gathered, enabling the generation of valuable training data for further improvements in the automated extraction process.
 
-\begin{figure}
+\begin{figure}[ht]
   \centering
-  \includegraphics[width=1\textwidth]{images/supercon-curation-pdf-viewer} 
-  \caption{PDF viewer. The page includes a table showcasing records extracted from the  current document, along with the PDF content and accompanying annotations.}
-  \label{fig:curation-interface-pdf-viewer}
+  \includegraphics[width=1\textwidth]{images/pdf-view-context.png} 
+  \caption{PDF document viewer showing an annotated document. The table on top is linked through the annotated entities. The user can navigate from the record to the exact point in the PDF, with a pointer (the red bulb light) identifying the context of the entities being examined. }
+  \label{fig:pdf-view}
 \end{figure}
+
+% \begin{figure}[h]
+%   \centering
+%   \includegraphics[width=1\textwidth]{images/supercon-curation-pdf-viewer} 
+%   \caption{PDF viewer. The page includes a table showcasing records extracted from the  current document, along with the PDF content and accompanying annotations.}
+%   \label{fig:curation-interface-pdf-viewer}
+% \end{figure}
 
 
 \subsection{Data flow and model}
@@ -81,7 +101,7 @@ The interface automatically collects training data. When a record is corrected, 
 The data flow is first introduced in our previous work~\cite{lfoppiano2023automatic} using a Map-Reduce approach. 
 First, in the "extraction task", the PDF documents are stored and processed by grobid-superconductors which transforms them in the corresponding annotations format. The format is illustrated in Figure~\ref{fig:data-flow-2} and is structured as a list of "passages" (sentences or paragraphs). 
 
-\begin{figure}[t]
+\begin{figure}[ht]
   \centering
   \includegraphics[width=0.8\textwidth]{images/data-flow-2} 
   \caption{Example of a passage extracted in the "extraction task". We highlight the different structured information in a single span: links, attributes, PDF coordinates (to visualise annotations on the PDF document), and annotations references within the sentence (to visualise annotations on text).}
@@ -120,7 +140,7 @@ On the contrary, binary records, such as PDF documents, are not duplicated, for 
 
 The PDF documents binary content is used to generate a hash code of 8 character which is used to avoid duplicated PDF document, for linking documents and records within the database. Each record, and even each span have its own unique identifier which are calculated using the span attributes.
 
-\begin{figure}
+\begin{figure}[h]
   \centering
   \includegraphics[width=1\textwidth]{images/record-correction} 
   \caption{Schema of the curation workflow. Each state is characterised of two properties: type and status, and one action, as indicated on the top right corner. "Error type" indicate the action of storing the error type for that specific action.}
@@ -189,14 +209,35 @@ In the curation interface we made the error type mandatory at each modification,
 When the updated is made, a new record is created, and the error type is stored in the previous record. The workflow schema in Figure~\ref{fig:curation-workflow} indicate "error type" in the states that requires it's selection. 
 
 \subsubsection{Usability}
-What are our usability goals? 
-What are the metrics for usability? 
 
-[Mato]
-PDF viewer jump from table to the related part of the PDF document, 
+[Mato revise and integrate] 
+The usability is an important aspect in evaluating an interface. 
+The criteria for evaluating the usability of a user interface can vary depending on the context and specific goals of the evaluation. 
+In regard to SuperCon\textsuperscript{2}, the simplicity makes it easier to evaluate, considering the main requirement being smoothly transition between the database records and the context in the document. 
+We consider the WEBUSE (WEBsite USability Evaluation Tool)~\cite{chiew2003webuse} evaluation criteria for our analysis. WEBUSE has been considered for evaluating web pages usability in many works and it can be summarised as follows: 
+\begin{itemize}
+    \item Content, organisation, and readability. The usability of a user interface can be evaluated based on how well the content is presented (clear and concise information) and organised (logical organisation), and how easily readable it is. 
+    \item Navigation and links. The ease of navigation and the effectiveness of links within the user interface are important criteria for usability evaluation. 
+    \item User interface design. The interface should be visually pleasing and visually consistent throughout the application or website. 
+    \item Performance and effectiveness. Performance and efficiency in making the users achieving their goals.
+\end{itemize}
 
-We implemented keyboard shortcuts, to allow people to move around without using the mouse 
-[We might need an experiment to measure the improvement in efficiency]
+We discuss the four criteria as follow. 
+\paragraph{Content, organisation and readability} The interface is simple and organised in two main pages: database and document. Since the database contains many columns we have reduced the ones visible by default, to make the table fitting in the average screen. We use colours to separate records belonging to different documents. 
+
+\paragraph{Navigation and links} The interface was designed with a minimalist approach. 
+There are links and shortcuts in many duplicated positions to reduce the effort for certain repeated actions.
+Finally, we provide an alternative and more efficient approach to navigation and correction using only the keyboard. 
+
+\paragraph{User interface design}
+[Mato] The interface was design using a modern template with character not smaller than ... and font of type ... etc etc etc 
+
+\paragraph{Performance and effectiveness}
+We designed the transitions to reduce the time required by users to lookup the text from the record. 
+One way is to visualise in the table view, the sentence the record is contained in, decorated with coloured spans to identify the annotations. This aims to provide users a quick check of the context without the original layout. 
+The second approach is to point to the related part of the PDF document decorated with the extracted annotations (Figure~\ref{fig:pdf-view}). In this way, curator will increase their productivity by reducing the time spent in the tedious task of searching for information in the PDF document. 
+ 
+[We might need an experiment to measure the improvement in efficiency??]
 
 
 
@@ -209,28 +250,54 @@ Grobid was built focusing on speed and robustness, and contains several fail-saf
 Examples of too big documents are dissertation thesis with more than 100 pages, that might be collected by mistake. 
 
 
-\begin{figure}
+\begin{figure}[ht]
   \centering
-  \includegraphics[width=1\textwidth]{images/processing-log.png} 
-  \caption{Processing log, showing the result of each of the actions described in Section~\ref{subsec:data-flow}, and if an error has occurred}
+  \includegraphics[width=1\textwidth]{images/processing-curation-log.png} 
+  \caption{On the top: Processing log, showing the output of each operation (process document, create record) and the outcome with the exception or error should have occurred. On the bottom: Curation log, indicating each record, the number of updates, and the date/time of the last updates.}
   \label{fig:processing-log}
 \end{figure}
 
 The curation log provide a view on the corrections that are performed in an aggregated page. 
 The curation log shows all the records that have been updated and when. It includes also the history of each record (Figure~\ref{fig:curation-log}).
 
-\begin{figure}[t]
-  \centering
-  \includegraphics[width=1\textwidth]{images/curation-log} 
-  \caption{Curation log, indicating each record, the number of updates, and the date/time of the last updates. }
-  \label{fig:curation-log}
-\end{figure}
+% \begin{figure}[ht]
+%   \centering
+%   \includegraphics[width=1\textwidth]{images/curation-log} 
+%   \caption{Curation log, indicating each record, the number of updates, and the date/time of the last updates. }
+%   \label{fig:curation-log}
+% \end{figure}
 
 
 \section{Data correction}
+In this section we discuss the data correction process, which is classified into the manual and automated one. There is substantial difference, the automated process does not certify correctness, is used only like a pre-processing for establish some potential problems in the data. 
+The manual correction is performed by domain-experts and certify both data correctness and high quality. 
 
 \subsection{Manual correction}
-[Terashima/Sakai] Discussion about the guidelines (which should be published in a format other than Powerpoint)
+[Terashima/Sakai to review]  
+The manual correction process follows the same principles of our previous work on SuperMat~\cite{foppiano2021supermat}, we work in an iterative way with regular meetings for collecting feedback and eventually amend the documentation. 
+We use a double-round approach where the data is initially corrected by one person, and validated in a second round, by a different person. 
+
+The guidelines are organised as a living document and are divided into two parts: the correction rules with examples-solution and the general principles.
+Since this work is performed with students with a high turnover the latter provides general information applied to corrections and very basic explanation containing illustration for a faster understanding (e.g. the colours of the annotations). 
+There are two main component described in the guidelines: the record that is being corrected and its context, which can be examined in the plain text sentence or in the PDF area. 
+
+The rules are described based on the error type mentioned before (Section~\ref{subsec:design-principles}), and they are written as sheets with five points:
+\begin{itemize}
+    \item \textbf{Sample input data}, a screenshot of SuperCon\textsuperscript{2} record in the interface
+    \item \textbf{Context}, a screenshot of the annotated PDF information,
+    \item \textbf{Motivation}, describes the issue with the data in exam, 
+    \item \textbf{Action} to be taken, 
+    \item \textbf{Expected output}, a screenshot of the SuperCon\textsuperscript{2} record after correction
+\end{itemize}
+
+An example of sheet can be found in Figure~\ref{fig:example-curation-sheet}. 
+
+\begin{figure}[ht]
+  \centering
+  \includegraphics[width=1\textwidth]{images/example-sheet-curation.png} 
+  \caption{Example of curation sheet. As discussed, it's written with a simple language assuming the person is not familiar with the task. }
+  \label{fig:example-curation-sheet}
+\end{figure}
 
 \subsection{Anomaly detection}
 \label{subsec:anomaly-detection}
@@ -261,9 +328,12 @@ The process works in the following way, when a correction is performed:
     \item when the material is found the passage object containing the text, spans, tokens and other information are collected and saved in a separate collection. The record id is also attached to the training data 
 \end{itemize}
 
-The training data can be inspected in a specific section (Figure~\ref{fig:training-data-view}).
+The training data can be inspected in a specific page of the application (Figure~\ref{fig:training-data-view}) and sent to the training data annotation tool. We integrated our interface with label-studio~\cite{Label_Studio} which is an open-source and flexible interface. 
+Examples are visualised by rows with their document hash and the status which can be "new" when the data is just added or "in progress" after the data is sent to the label-studio application. 
+The workflow does not require additional states, because the data can be exported from label-studio after corrected. 
 
-\begin{figure}[t]
+
+\begin{figure}[h]
   \centering
   \includegraphics[width=1\textwidth]{images/training-data-viewer} 
   \caption{Training data view}
@@ -272,13 +342,11 @@ The training data can be inspected in a specific section (Figure~\ref{fig:traini
 
 Since the training data generated with this interface are related to proven mistakes in the TDM process, intuitively they should provide a higher impact in improving the model than training data of the same amount, randomly selected.
 To prove this hypothesis, we performed an experiment: we selected around 400 training examples initially marked as incorrect by the anomaly detection script and we curated them. 
-Then, we collected the training data and manually correct them, keeping only training data that was actually corrected. 
-We obtained 352 examples (curation) which were added to the SuperMat examples (Base). 
+Then, we collected the training data and manually correct them, keeping only training data that was actually corrected composing a set of 352 examples. We define \textit{curation} the dataset from curated data and \textit{base} the original SuperMat.
 
-In this experiment we focused on the best model which is based on SciBERT, and that can be trained with two different strategies: from scratch (s) or incrementally (i).
-We defined three scenario: a) Base from scratch, b) Base+curation from scratch, and c) Base from scratch and then Base+curation incrementally.
-
-[TODO: clarify why do we need Base+curation incrementally??]
+In this experiment we focused on the best model which is based on SciBERT, and that can be trained with two different strategies: "from scratch" when the model is initialised randomly (s) or "incremental" when the initial model weights are used from a trained model (i).
+We defined three scenario: a) base from scratch, b) base+curation from scratch, and c) base+curation incrementally. 
+We merge curation with the base dataset because the curation dataset is very small as compared with base, to avoid forgetting previous weights.  
 
 The obtained models are tested using a fixed holdout dataset we have designed in our previous work~\cite{lfoppiano2023automatic} and the evaluation scores are illustrated in Table~\ref{tab:evaluation-curation-training}.
 
