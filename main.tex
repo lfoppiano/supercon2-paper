@@ -73,7 +73,7 @@ The subsequent section (Section~\ref{sec:ingestion}) discusses the ingestion pro
 \section{Ingestion process}
 \label{sec:ingestion}
 
-The ingestion process (Figure~\ref{fig:map-reduce}) is designed using a Map-Reduce approach. 
+The ingestion process (Figure~\ref{fig:map-reduce}) is designed using a Extract-Aggregate approach. 
 We briefly introduced it in our previous work~\cite{lfoppiano2023automatic} and we discuss the technical details in this section. 
 
 \begin{figure}[ht]
@@ -151,14 +151,14 @@ The schema consists of two main classes: material information (material names, f
 \end{figure}
 
 
-During the curation process is often necessary to navigate back and forth between the extracted record that is being examined and the related context in the paper (the related paragraph or sentence). 
+During the curation process, it is often necessary to navigate back and forth between the extracted record that is being examined and the related context in the paper (the related paragraph or sentence). 
 The curation interface provides a document viewer combining a table with the extracted records and the viewer of their respective document (Figure~\ref{fig:pdf-view}). The viewer highlights the annotations that identify materials and properties, enabling users to easily locate and reference the extracted information within the document.
 
 Users can add, amend, remove, or mark the records that are presented to them.  
 Marking a record refers to the act of applying a visual or symbolic indication to a specific record, which can be "invalid" or "validated". 
 Adding new records is limited to documents already in the database.
 
-The interface automatically collects training data, when a record is amended, the information pertaining it's raw source information (sentence text, annotations) are collected. 
+The interface automatically collects training data; when a record is amended, the information pertaining it's raw source information (sentence text, annotations) are collected (Section~\ref{subsec:feedback-loop-training-data}). 
 
 \begin{figure}[ht]
   \centering
@@ -176,12 +176,12 @@ The interface automatically collects training data, when a record is amended, th
 
 \subsection{Design principles}
 \label{subsec:design-principles}
-
-The design principle is a set of rules we chose at the beginning of the development. We define "curation" the overall process of correcting and validating information, and "correction" the process of modifying the values of a single item. 
+The design principle is a set of rules we chose at the beginning of the development. 
+We define "curation" the process of correcting and validating the whole database, and "correction" the process of modifying the values of a single record or property. 
 
 \paragraph{Blind curation}
-This interface has been built without any multi-user mechanism. 
-The data is allocated to different curators by generating randomised links to the application. Each link opens records extracted from a specific document. 
+The documents to be corrected are allocated to each curator using random selection. 
+Each curator 
 The justification for this approach is twofold: a) the allocation is totally random and each curation does not know any information about the others, and b) the multi-user implementation requires a large effort without any particular scientific gain. 
 
 \paragraph{Data-driven architecture} When a record is amended, the corrected information are stored in a new entry linked to the original one. 
@@ -200,11 +200,12 @@ Obviously, this does not avoid loading two different PDF documents of the same a
   \label{fig:curation-workflow}
 \end{figure}
 
-\paragraph{Type and Status} Each \textit{record} has two workflow-related fields which are combined to identify the state of the workflow, which is illustrated in Figure~\ref{fig:curation-workflow}. 
+\paragraph{Curation status} Each \textit{record} has two workflow-related fields which are combined to identify the state of the workflow, which is illustrated in Figure~\ref{fig:curation-workflow}. 
 The status indicates the record curation status from the data point of view (e.g. validated, invalid, curated, etc.), and is summarised in Table~\ref{tab:record-status}
 
 \begin{table}[htbp]
 \centering
+\caption{Record status definitions}
 \begin{tabular}{lp{10cm}}
 \toprule
 \textbf{Status} & \textbf{Description} \\
@@ -217,7 +218,6 @@ obsolete & Assigned to a record when it is modified, triggering the creation of 
 deleted & The record has been removed by a curator (internal status, not visible to users). \\
 \bottomrule
 \end{tabular}
-\caption{Record status definitions}
 \label{tab:record-status}
 \end{table}
     
@@ -229,6 +229,7 @@ Since such statistics demonstrated to be useful during the development, we have 
 
 \begin{table}[htbp]
 \centering
+\caption{Summary of error type values and description.}
 \begin{tabular}{lp{8cm}}
 \toprule
 \textbf{Name} & \textbf{Description} \\
@@ -243,7 +244,6 @@ Anomaly detection & The data is automatically modified by the anomaly detection 
 Curation amends & The curator is updating the data which does not present issues due to the automatic system. \\
 \bottomrule
 \end{tabular}
-\caption{Summary of error type values and description.}
 \label{tab:error-types}
 \end{table}
 
@@ -428,6 +428,10 @@ The trained models are then tested using a fixed holdout dataset that we designe
 
 \begin{table}[ht]
 \centering\small
+\caption{F1-score from the evaluation of the fine-tuning training of SciBERT. The training is performed with three different approaches. 
+The \emph{base} dataset is the original dataset described in~\cite{lfoppiano2023automatic}, the \emph{curation} dataset is automatically collected based on the database corrections by the interface and manually corrected. \textit{s} indicate "training from scratch", while \textit{i} indicate "incremental training". 
+The evaluation is performed using the same holdout dataset from SuperMat. 
+The results are averaged over 5 runs. }
 \begin{tabular}{lrrr}
 \toprule
 & \textbf{base}(s) & \textbf{(base+curation)(s)} & \textbf{base(s)+curation(i)} \\ 
@@ -446,16 +450,13 @@ Nb total examples & 16902 & 17254 & 16902(s), 17254 (i)\\
 \textbf{$\Delta$ avg. w/ baseline}& -       & +0,80             & \textbf{+1,50} \\ 
 \bottomrule
 \end{tabular}
-\caption{F1-score from the evaluation of the fine-tuning training of SciBERT. The training is performed with three different approaches. 
-The \emph{base} dataset is the original dataset described in~\cite{lfoppiano2023automatic}, the \emph{curation} dataset is automatically collected based on the database corrections by the interface and manually corrected. \textit{s} indicate "training from scratch", while \textit{i} indicate "incremental training". 
-The evaluation is performed using the same holdout dataset from SuperMat. 
-The results are averaged over 5 runs. }
 \label{tab:evaluation-curation-training}
 \end{table}
 
 
 \begin{table}[ht]
 \centering
+\caption{Data support, corresponding to the number of entities of a specific type.}
 \begin{tabular}{lrrr}
 \toprule
                         & \textbf{base}     & \textbf{base+curation}    & \textbf{$\Delta$}  \\ 
@@ -470,7 +471,6 @@ The results are averaged over 5 runs. }
 \textbf{Total}          & 15586             & 17432                     & 1846               \\ 
 \bottomrule
 \end{tabular}
-\caption{Data support, corresponding to the number of entities of a specific type.}
 \label{tab:training-support}
 \end{table}
 
@@ -498,6 +498,7 @@ When we examined the accuracy of the extracted data, we observed a 6\% improveme
 
 \begin{table}[ht]
 \centering
+\caption{Results of the comparison between the curation using the SuperCon 2 interface and the traditional method of reading the PDF document. }
 \begin{tabular}{lrrr}
 \toprule
                     & \textbf{P (\%)}   & \textbf{R (\%)}   & \textbf{F1 (\%)}  \\
@@ -506,7 +507,6 @@ When we examined the accuracy of the extracted data, we observed a 6\% improveme
     Interface       & \textbf{93.37}    & \textbf{96.39}    & \textbf{93.28}    \\
     \bottomrule
 \end{tabular}
-\caption{Results of the comparison between the curation using the SuperCon 2 interface and the traditional method of reading the PDF document. }
 \label{tab:evaluation-interface-correction}
 \end{table}
 
@@ -514,6 +514,7 @@ The disparity in experience significantly influenced the accuracy of curation, p
 
 \begin{table}[h]
 \centering
+\caption{Accuracy measured by curator experience}
 \begin{tabular}{lrrr}
 \toprule
 \textbf{Experience} & \textbf{P (\%)}   & \textbf{R (\%)}   & \textbf{F1 (\%)}  \\
@@ -523,7 +524,6 @@ PhD student         & 83.33             & 65.69             & 69.45             
 Senior researcher   & \textbf{98.45}    & \textbf{81.22}    & \textbf{83.08}    \\
 \bottomrule
 \end{tabular}
-\caption{Accuracy measured by curator experience}
 \label{tab:accuracy-by-experience}
 \end{table}
 
@@ -531,6 +531,7 @@ Finally, the collected data suggest that all three curators had overall more cor
 
 \begin{table}[h]
 \centering
+\caption{Accuracy measured by experience and method, PDF document vs Interface}
 \begin{tabular}{lcrrr}
 \toprule
 \textbf{Experience} & \textbf{Method} & \textbf{P (\%)} & \textbf{R (\%)} & 
@@ -546,7 +547,6 @@ Finally, the collected data suggest that all three curators had overall more cor
  & Interface & 97.42 & \textbf{98.33} & \textbf{97.78} \\
 \bottomrule
 \end{tabular}
-\caption{Accuracy measured by experience and method, PDF document vs Interface}
 \label{tab:accuracy-by-experience-method}
 \end{table}
 
