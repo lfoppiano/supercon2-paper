@@ -50,7 +50,7 @@ This scarcity can be attributed to inadequate infrastructure and a shortage of e
 SuperCon~\cite{SuperCon} was built manually from 1987~\cite{ishii2023structuring} by the National Institute for Materials Science (NIMS) in Japan and it is considered the gold standard in superconductors research.
 Despite being praised for its excellent quality in numerous reports~\cite{roter2020predicting, stanev_machine_2017, tran2022machine, konno2021deep}, the updates of SuperCon have become increasingly challenging due to the high publication rate. 
 However, in response to the need for a more efficient approach to sustain productivity, we embarked on the development of an automated system for extracting material and property information from the text contained in relevant scientific publications~\cite{lfoppiano2023automatic}. 
-This automated process enabled the rapid creation of SuperCon\textsuperscript{2}, a comprehensive database of superconductors containing around 40,000 entries, within an operational duration of just a few days. 
+This automated process enabled the rapid creation of SuperCon\textsuperscript{2}, a comprehensive database of superconductors containing around 40000 entries, within an operational duration of just a few days. 
 Matching the level of quality seen in SuperCon while simultaneously automating the extraction of organised data can be achieved with a properly designed curation process. 
 We define as \emph{curation} the general term indicating the correction and validation of records in a database as a whole, and \emph{correction} as the specific process of modifying the values of one or more properties in a single record. 
 At the moment of writing this article, we are not aware of any other curation tool focusing on structured databases of extracted information. 
@@ -68,7 +68,7 @@ Our contributions to the field can be summarised as follows:
 \end{itemize}
 
 The subsequent section (Section~\ref{sec:ingestion}) presents the data ingestion process.
-Section~\ref{sec:curation-workflow} describes the curation workflow, Section~\ref{sec:user-interface} the user interface on top of it.
+Section~\ref{sec:curation-workflow} describes the curation workflow, and Section~\ref{sec:user-interface} the user interface on top of it.
 Finally, we discuss our evaluation experiments in Section~\ref{sec:interface-evaluation}. 
 
 
@@ -127,7 +127,7 @@ Furthermore,\textit{Linkable} indicate whether the span respects the criteria to
 The links (green) indicate linked entities and their type (in our example the material FeSe is linked to 13K of type \texttt{<tcValue>}. 
 The type indicates the algorithm used for extracting the relation and the "targetId" indicates the unique id of the relation target span (13 K).
 
-The attributes are stored as a key-value and contain additional information extracted by the subsequent models such as the Material Parser. For example, the chemical formula is stored both as string and as structured composition (a list of elements and their amount in the formula), the material class, and so on.
+The attributes are stored as a key-value and contain additional information extracted by the subsequent models such as the Material Parser. For example, the chemical formula is stored both as a string and as structured composition (a list of elements and their amount in the formula), the material class, and so on.
 
 The "PDF boxes coordinates" (yellow) are expressed as lists of objects containing page number, top-right and bottom-left coordinates\footnote{Details on coordinates is available in the official grobid documentation \url{https://grobid.readthedocs.io/en/latest/Coordinates-in-PDF/\#coordinates-in-teixml-results}}. This information is sufficient to draw a set of rectangles on the PDF document ("the boxes") that encapsulate groups of tokens belonging to each annotation. An example of the final result can be seen in Figure~\ref{fig:pdf-view}.
 
@@ -165,7 +165,7 @@ The curation process can be delineated as a structured workflow, wherein each re
 These transitions are determined by the actions that are executed on the record, encompassing various stages of refinement and enhancement. 
 Figure~\ref{fig:curation-workflow} illustrate the concept in detail.
 A record enters the workflow at the ingestion process (Section~\ref{sec:ingestion}) and its state can change by manual action or automatic process. 
-In this workflow, the automatic process is the "anomaly detection" (Section~\ref{subsec:anomaly-detection}) which aims to automatically mark outliers. 
+In this workflow, the automatic process is "anomaly detection" (Section~\ref{subsec:anomaly-detection}) which aims to automatically mark outliers. 
 There are four types of manual actions: 
 \begin{itemize}
     \item \textbf{mark as valid}: when a record is considered corrected, without the need for any correction, 
@@ -433,26 +433,31 @@ This indicates appropriate effectiveness and a relatively low rate of false posi
 
 \subsection{Training data generation}
 \label{subsec:training-data-generation-evaluation}
-We selected around 400 Supercon\textsuperscript{2} extracted records initially marked by the anomaly detection process, and we corrected them following the process explained previously in ~\ref{sec:user-interface}. 
-Then, we collected the raw data that was collected by the workflow and we obtained a set of 352 examples (these did not include the false positives identified by the anomaly detection).
-
+We selected around 400 Supercon\textsuperscript{2} extracted records initially marked by the anomaly detection process. 
+Following the guidelines, we corrected these records to exclude false positives wrongly identified by anomaly detection.  
+At the same time the interface collected examples of training data based on our corrections. 
+Then, after we corrected the obtained set of raw data we obtained a small set of 352 training data examples for our superconductors ML models. 
 We call the obtained dataset \emph{curation} to be distinguished from the original SuperMat dataset which is referred to as \emph{base}.
 
-We performed different training/evaluation tests on the fine-tuning of our best model based on SciBERT~\cite{Beltagy2019SciBERT}. 
-We use the DeLFT (Deep Learning For Text)~\cite{DeLFT} library for training, evaluating, and managing the models for prediction.  A model can be trained with two different strategies: 
+We prepared our experiment using the SciBERT~\cite{Beltagy2019SciBERT} implementation, and we fine-tuned the model for our downstream NER task discussed in detail in~\cite{lfoppiano2023automatic}.
+We trained five models, and evaluate them using a fixed holdout dataset from SuperMat, and we averaged the results for smoothing out the fluctuations in the results. 
+We use the DeLFT (Deep Learning For Text)~\cite{DeLFT} library for training, evaluating, and managing the models for prediction.  
+A model can be trained with two different strategies: 
 \begin{enumerate}
     \item \emph{``from scratch''}: when the model is initialised randomly. We denote this strategy with an \emph{(s)}.
     \item \emph{``incremental''}: when the initial model weights are taken from an already existing model. We denote this strategy with an \emph{(i)}.
 \end{enumerate}
-The latter can be seen as a way to ``continue'' the training from a specific checkpoint. We thus define three different training protocols: 
+The latter can be seen as a way to ``continue'' the training from a specific checkpoint.
+
+We thus define three different training protocols: 
 \begin{enumerate}
-    \item Using the \emph{base} dataset and training from scratch (s).
-    \item Using both the \emph{base} and \emph{curation} datasets and training from scratch (s).
-    \item Using the \emph{base} dataset to train from scratch (s), and then continuing the training with the \emph{curation} dataset (i).
+    \item \textbf{base(s)}: using the \emph{base} dataset and training from scratch (s).
+    \item \textbf{(base+curation)(s)}: using both the \emph{base} and \emph{curation} datasets and training from scratch (s).
+    \item \textbf{base(s)+(base+curation)(i)}: Using the \emph{base} dataset to train from scratch (s), and then continuing the training with the \emph{curation} dataset (i).
 \end{enumerate}
 We merge ``curation'' with the base dataset because the curation dataset is very small compared to ``base'', and we want to avoid catastrophic forgetting~\cite{overcoming-kirkpatrick-etal-2016} or overfitting.
 
-The trained models are then tested using a fixed holdout dataset that we designed in our previous work~\cite{lfoppiano2023automatic} and the evaluation scores are shown in Table~\ref{tab:evaluation-curation-training}.
+The trained models are then tested using a fixed holdout dataset that we designed in our previous work~\cite{lfoppiano2023automatic} and the evaluation scores are shown in Table~\ref{tab:evaluation-curation-training2}.
 
 \begin{table}[ht]
 \centering\small
@@ -462,46 +467,24 @@ The evaluation is performed using the same holdout dataset from SuperMat.
 The results are averaged over 5 runs. }
 \begin{tabular}{lrrr}
 \toprule
-& \textbf{base}(s) & \textbf{(base+curation)(s)} & \textbf{base(s)+curation(i)} \\ 
+& \textbf{base(s)} & \textbf{(base+curation)(s)} & \textbf{base(s)+curation(i)} \\ 
 \midrule
 Nb total examples & 16902 & 17254 & 16902(s), 17254 (i)\\ 
 \midrule
-\texttt{<class>}        & 70,22             & 72,30             & \textbf{72,63} \\ 
-\texttt{<material>}     & 79,69             & 80,23             & \textbf{80,61} \\ 
-\texttt{<me\_method>}   & 64,78             & 65,31             & \textbf{66,62} \\ 
-\texttt{<pressure>}     & \textbf{46,96}    & 46,53             & 46,84 \\ 
-\texttt{<tc>}           & 77,36             & 78,56             & \textbf{79,57} \\ 
-\texttt{<tcValue>}      & 77,26             & \textbf{77,94}    & 77,84 \\ 
+\texttt{<class>}        & 70.41         & \textbf{73.02}         & 71.86 \\ 
+\texttt{<material>}     & 79.37         & 80.09         & \textbf{80.37} \\ 
+\texttt{<me\_method>}   & 66.72         & 66.57         & \textbf{66.95} \\ 
+\texttt{<pressure>}     & 46.43         & \textbf{48.42}         & 47.23 \\ 
+\texttt{<tc>}           & 80.13         & \textbf{80.92}         & 80.34 \\ 
+\texttt{<tcValue>}      & 78.29         & 78.41         & \textbf{79.73} \\ 
 \midrule
-\textbf{All (micro avg.)} & 75,86           & 76,66             & \textbf{77,36} \\ 
+\textbf{All (micro avg.)} & 76.67       & 77.44         & \textbf{77.48} \\ 
 \midrule
-\textbf{$\Delta$ avg. w/ baseline}& -   & +0,80             & \textbf{+1,50} \\ 
+\textbf{$\Delta$ avg. w/ baseline}& -   & +0.77     & \textbf{+0.81} \\ 
 \bottomrule
 \end{tabular}
-\label{tab:evaluation-curation-training}
+\label{tab:evaluation-curation-training2}
 \end{table}
-
-
-% \begin{tabular}{lrrr}
-% \toprule
-% & \textbf{base}(s) & \textbf{(base+curation)(s)} & \textbf{base(s)+curation(i)} \\ 
-% \midrule
-% Nb total examples & 16902 & 17254 & 16902(s), 17254 (i)\\ 
-% \midrule
-% \texttt{<class>}        & 70.41         & \textbf{73.02}         & 71.86 \\ 
-% \texttt{<material>}     & 79.37         & 80.09         & \textbf{80.37} \\ 
-% \texttt{<me\_method>}   & 66.72         & 66.57         & \textbf{66.95} \\ 
-% \texttt{<pressure>}     & 46.43         & \textbf{48.42}         & 47.23 \\ 
-% \texttt{<tc>}           & 80.13         & \textbf{80.92}         & 80.34 \\ 
-% \texttt{<tcValue>}      & 78.29         & 78.41         & \textbf{79.73} \\ 
-% \midrule
-% \textbf{All (micro avg.)} & 76.67       & 77.44         & \textbf{77.48} \\ 
-% \midrule
-% \textbf{$\Delta$ avg. w/ baseline}& -   & +0.77     & \textbf{+0.81} \\ 
-% \bottomrule
-% \end{tabular}
-% \label{tab:evaluation-curation-training}
-% \end{table}
 
 
 \begin{table}[ht]
@@ -524,31 +507,34 @@ Nb total examples & 16902 & 17254 & 16902(s), 17254 (i)\\
 \label{tab:training-support}
 \end{table}
 
-The result of this experiment is that with only 352 examples (2\% of the SuperMat dataset) and 1846 more entities (11\% of the entities from the SuperMat dataset) (Table~\ref{tab:training-support}. 
-We obtained an increment of +1.50 in F1-score\footnote{In our previous work~\cite{lfoppiano2023automatic} we reported 77.03\% F1-score. There is slight a decrease in absolute scores between DeLFT 0.2.8 and DeLFT 0.3.0. The most probable cause could be the impact of using Hugging Face library which is suffering of quality issues in particular in relation with their tokenizers implementation \url{https://github.com/kermitt2/delft/issues/150}}.
 
-% This experiment demonstrates that with only 352 examples (2\% of the SuperMat dataset) and 1846 additional entities (11\% of the entities from the SuperMat dataset) (Table~\ref{tab:training-support}) we obtain an improvement from 76.67\%\footnote{In our previous work~\cite{lfoppiano2023automatic} we reported 77.03\% F1-score. There is slight a decrease in absolute scores between DeLFT 0.2.8 and DeLFT 0.3.0. 
-% One cause may be the use of different hyperparameters in version 0.3.0 such as batch size and learning rate.
-% However, the most probable cause could be the impact of using the Huggingface library which is suffering from quality issues in relation to their tokenizers implementation \url{https://github.com/kermitt2/delft/issues/150}.} to an F1-Score between 77.44\% (+0.77) and 77.48\% (+0.81) when re-training from scratch or incrementally, respectively. 
+This experiment demonstrates that with only 352 examples (2\% of the SuperMat dataset) comprising 1846 additional entities (11\% of the entities from the SuperMat dataset) (Table~\ref{tab:training-support}), we obtain an improvement from 76.67\%\footnote{In our previous work~\cite{lfoppiano2023automatic} we reported 77.03\% F1-score. 
+There is slight a decrease in absolute scores between DeLFT 0.2.8 and DeLFT 0.3.0. 
+One cause may be the use of different hyperparameters in version 0.3.0 such as batch size and learning rate.
+However, the most probable cause could be the impact of using the Huggingface library which is suffering from quality issues in relation to their tokenizers implementation \url{https://github.com/kermitt2/delft/issues/150}.} to an F1-score between 77.44\% (+0.77) and 77.48\% (+0.81) for (base+curation)(s) and (base(s)+curation(i)), respectively. 
 
+% Here, the incremental approach obtained a score similar to the model trained from scratch with the extended ``base+curation'' dataset. 
+% There are several hypotheses for this result, the first hypothesis is that the training dataset is not big enough for the task at hand, therefore the model requires more training time. 
+% This issue could be verified by correcting all the available training data and repeating this experiment. 
+% Another hypothesis that our data distribution is rather skewed (c.f. Table \ref{tab:training-support}) favours an incremental approach as the deltas in the support of the ``curation'' dataset with respect to the ``base'' dataset, somehow counters the class imbalance. 
 
-Here, the incremental approach obtained nearly twice the improvement of the model trained from scratch with the extended ``base+curation'' dataset. 
-There are several hypotheses for this result, the first hypothesis is that the training dataset is not big enough for the task at hand, therefore the model requires more training time. 
-This issue could be verified by correcting all the available training data and repeating this experiment. 
-Another hypothesis that our data distribution is rather skewed (c.f. Table \ref{tab:training-support}) favours an incremental approach as the deltas in the support of the ``curation'' dataset with respect to the ``base'' dataset, somehow counters the class imbalance. 
-Finally, might also be that the hyperparameters we chose for our model, in particular, the learning rate and batch size could be still better tuned in order to close the gap between the second and the third approach.
+This experiment gives interesting insight relative to the positive impact on the way we select the training data. 
+However, there are some limitations: the \emph{curation} dataset is small as compared with the \emph{base} dataset. This issue could be verified by correcting all the available training data and repeating this experiment, and studying the interpolation between the size of the two datasets and the obtained evaluation scores. 
+A second limitation is that the hyperparameters we chose for our model, in particular, the learning rate and batch size could be still better tuned to obtain better results with the second and third training protocols.
 
 
 \subsection{Data quality}
 \label{sec:interface-evaluation}
-To compare the efficiency and correctness of data extraction we conducted an experiment using two methods: a) the SuperCon\textsuperscript{2} user \textit{interface} or b) the "traditional approach" of reading \textit{PDF} documents and filling up an Excel file. 
+We conducted an experiment to evaluate the effectiveness and accuracy of data curation using two techniques: a) the user interface, and b) the traditional manual method involving reading PDF documents and populating an Excel file.
 
-Our sample consisted of 15 papers, which were distributed among three curators — a senior researcher, a PhD student, and a master's student. 
-We distributed 10 papers to each curator, with an equal split between \textit{interface} and \textit{pdf}. The overlap between curators was of 5 papers using the opposite method (e.g. curator A receives paper 1 to be corrected with the \textit{interface}, curator B, that shares the same paper has to curate it by reading the \textit{pdf})
-The curated content was then revised by a fourth person manually and the revision was used for calculating the evaluation scores. 
+We opted for a sample dataset consisting of 15 papers, which we divided among three curators — a senior researcher, a PhD student, and a master's student. Each curator received 10 papers, with an equal distribution between using the \textit{interface} and working with \textit{pdf} files. 
+There was an overlap of 5 papers between curators, where the opposite method was applied. 
+For instance, if curator A used the \textit{interface} to correct paper 1, curator B, who also had the same paper, corrected it by reading the \textit{pdf} document.
+After curation, a fourth individual manually reviewed the curated content. The revisions made during this process were then employed to calculate the evaluation scores.
 
-We evaluated the two methods based on two trade-off aspects: efficiency, by comparing the time required for curation, and accuracy, measured in terms of precision, recall, and F1-score.
+We assessed the two approaches using a dual perspective: efficiency, by contrasting the time needed for curation, and accuracy, quantified through precision, recall, and the F1-score.
 
+\subsubsection{Discussion}
 The comparison of the time taken revealed no significant difference between the interface and the traditional method. Specifically, the total time was only 4 minutes longer with the interface (188 minutes compared to 184 minutes). The time difference did not demonstrate any consistent trend, suggesting the need for a larger dataset in future experiments.
 
 When we examined the accuracy of the extracted data, we observed a 6\% improvement in precision and a substantial 111\% improvement in recall when using the interface (Table~\ref{tab:evaluation-interface-correction}). 
@@ -609,7 +595,7 @@ Finally, the collected data suggest that all three curators had overall more cor
 
 
 The results of this experiment confirmed that utilising the interface in conjunction with an automated system required a comparable amount of time for curating SuperCon data compared to the "traditional method." However, it significantly improved the quality of the extracted data.
-Additionally, several observations were made during the curation process:
+Additionally, the following observations were made during the curation process:
 
 \begin{itemize}
     \item The interface requires a finite adaptation time, in particular at the beginning of the work. The curators that were starting the evaluation from the interface tended to ask questions about the usage, primarily due to their lack of familiarity. 
@@ -630,14 +616,13 @@ Our warmest thanks to Patrice Lopez, the author of Grobid~\cite{GROBID}, DeLFT~\
 We thank Pedro Baptista de Castro for his support during this work. 
 
 \section{Conclusions}
-We built a staging area for SuperCon that allow the feeding with high-quality data from TDM of materials and properties through efficient manual curation. 
-The data is loaded through an ingestion process that loads a persistent database of materials and relative properties extracted automatically by Grobid-superconductors~\cite{lfoppiano2023automatic}. 
-The data is then pre-processed with anomaly detection rules to identify outliers and mark them.
-We then developed a user interface for curating the new superconductors data extracted automatically, before it is sent to the SuperCon database. 
-The interface combines the best practices in user interaction design and provides among many features: an enhanced PDF document visualisation and rapid transitions from the database records the related section in the original document. 
+We built a staging area for SuperCon to allow the production of manually-curated high-quality data collected from scientific articles using an automated TDM process. 
+The data is extracted from PDF documents using Grobid-superconductors~\cite{lfoppiano2023automatic} and is stored in a structured database. 
+We designed a curation workflow that leverages both automatic and manual operations: anomaly detection automatically identifies outliers and individuals can manually correct records through a user interface specifically tailored to optimise quality and mitigate mistakes.
+The interface combines the best practices in user interaction design and provides, among many other features, an enhanced PDF document visualisation and rapid transitions from the database records the related section in the original document. 
 We reported that our interface achieves higher precision while requiring the same time for curating, as compared with the traditional manual process.
 The interface also automatically collects data related to the correction that can be used to feed back the ML models as training data. 
-We demonstrated that the feedback loop based on corrected data can substantially improve the machine learning models with fresh and targeted training data. 
+We demonstrated that the feedback loop based on corrected data can substantially improve the machine learning models with training data targeting incorrect recognition by the ML models. 
 
 There are several planned features and improvements in the pipeline. Some of these include:
 
