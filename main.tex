@@ -53,7 +53,13 @@
 \maketitle
 
 \begin{abstract}
-We propose a semi-automatic staging area for efficiently building an accurate database of experimental physical properties of superconductors from literature, called SuperCon\textsuperscript{2}, to enrich the existing manually-built superconductor database SuperCon. To validate efficiently new experimental data gathered by named entity recognition, the system includes a curation workflow together with the database. In the system, the data is extracted from PDF documents using Grobid-superconductors~\cite{lfoppiano2023automatic} and stored in a structured database (SuperCon\textsuperscript{2} Database) that is followed by a curation workflow managing the state transitions of each examined record. This curation workflow allows both automatic and manual operations, the former contains ``anomaly detection'' that scans new data identifying outliers, and a ``training data collector'' mechanism that collects training data examples based on manual corrections. Such training data collection policy is effective in improving the machine-learning models with a reduced number of examples. For manual operations, the interface (SuperCon\textsuperscript{2} interface) is developed to increase efficiency during manual correction by providing a smart interface and an enhanced PDF document viewer. We show that our interface significantly improves the curation quality by boosting precision and recall as compared with the traditional ``manual correction''.  Our semi-automatic approach would provide a solution for achieving a reliable database with text-data mining of scientific documents.
+We propose a semi-automatic staging area for efficiently building an accurate database of experimental physical properties of superconductors from literature, called SuperCon\textsuperscript{2}, to enrich the existing manually-built superconductor database SuperCon. 
+Here we report our curation interface (SuperCon\textsuperscript{2} Interface) and a workflow managing the state transitions of each examined record, to validate the dataset of superconductors from PDF documents collected using Grobid-superconductors in a previous work~\cite{lfoppiano2023automatic}. 
+This curation workflow allows both automatic and manual operations, the former contains ``anomaly detection'' that scans new data identifying outliers, and a ``training data collector'' mechanism that collects training data examples based on manual corrections. 
+Such training data collection policy is effective in improving the machine-learning models with a reduced number of examples. 
+For manual operations, the interface (SuperCon\textsuperscript{2} interface) is developed to increase efficiency during manual correction by providing a smart interface and an enhanced PDF document viewer. 
+We show that our interface significantly improves the curation quality by boosting precision and recall as compared with the traditional ``manual correction''.  
+Our semi-automatic approach would provide a solution for achieving a reliable database with text-data mining of scientific documents.
 
 \end{abstract}
 
@@ -82,47 +88,25 @@ This scarcity can be attributed to inadequate infrastructure and a shortage of e
 
 The SuperCon database was built manually from 1987~\cite{ishii2023structuring} by the National Institute for Materials Science (NIMS) in Japan and it is considered a reliable source of experimental data on superconductors~\cite{roter2020predicting, stanev_machine_2017, tran2022machine, konno2021deep}. 
 However, the updates of SuperCon have become increasingly challenging due to the high publication rate. 
-In response to the need for a more efficient approach to sustain productivity, we embarked on the development of an automated system for extracting material and property information from the text contained in relevant scientific publications~\cite{lfoppiano2023automatic}. 
-This automated process enabled the rapid creation of ``SuperCon\textsuperscript{2} Database'', a comprehensive database of superconductors containing around 40000 entries, within an operational duration of just a few days. 
+In response to the need for a more efficient approach to sustain productivity, we embarked on the development of an automated system for extracting material and property information from the text contained in relevant scientific publications. 
+This automated process enabled the rapid creation of ``SuperCon\textsuperscript{2} Database'', a comprehensive database of superconductors containing around 40000 entries, within an operational duration of just a few days~\cite{lfoppiano2023automatic}. 
 Matching the level of quality seen in SuperCon while simultaneously automating the extraction of organised data can be achieved with a properly designed curation process. 
 We use the term \emph{curation} to describe the overall process of reviewing and validating database records, while \emph{correction} refers to the specific action of altering the values of one or more properties within an individual record.
 At the moment of writing this article, we are not aware of any other curation tool focusing on structured databases of extracted information. 
 There are several tools for data annotation, such as Inception~\cite{klie-etal-2018-inception}, and Doccano~\cite{doccano} which concentrate on text labelling and classification.
 
-In this work, we designed and developed a workflow with a user interface, ``SuperCon\textsuperscript{2} interface'', crafted to produce structured data of superior quality and efficiency to the one obtained by the ``traditional'' manual approach consisting of reading documents and noting records, usually on an Excel file.
+In this work, we designed and developed a workflow with a user interface, ``SuperCon\textsuperscript{2} Interface'', crafted to produce structured data of superior quality and efficiency to the one obtained by the ``traditional'' manual approach consisting of reading documents and noting records, usually on an Excel file.
 We developed this framework around the specific use case of SuperCon, however, our goal is to be adapted to alternative data frameworks.
-
 
 Our contributions can be summarised as follows:
 \begin{itemize}
-    \item We developed a workflow (Section~\ref{sec:curation-workflow}) and a user interface (Section~\ref{sec:user-interface}) that allow the curation of a machine-collected database. We demonstrate that using it for data correction resulted in higher quality than the ``traditional'' (manual) approach (Section~\ref{sec:interface-evaluation}).
-    \item We devise an anomaly detection process for incoming data lower rejection rate (false positive rate) from domain experts (Section~\ref{subsec:anomaly-detection-evaluation}).
-    \item We propose a mechanism that selects training data based on corrected records, and we demonstrate that such selections are rapidly improving the ML models (Section~\ref{subsec:training-data-generation-evaluation}).
+    \item We developed a workflow and a user interface that allow the curation of a machine-collected database. We demonstrate that using it for data correction resulted in higher quality than the ``traditional'' (manual) approach.
+    \item We devise an anomaly detection process for incoming data lower rejection rate (false positive rate) from domain experts.
+    \item We propose a mechanism that selects training data based on corrected records, and we demonstrate that such selections are rapidly improving the ML models.
 \end{itemize}
 
-The subsequent section (Section~\ref{sec:ingestion}) presents the data ingestion process.
-Section~\ref{sec:curation-workflow} describes the curation workflow and Section~\ref{sec:user-interface} the user interface on top of it.
-Finally, we discuss our evaluation experiments in Section~\ref{sec:interface-evaluation}. 
-
-
-\section{Ingestion process}
-\label{sec:ingestion}
-
-The ingestion process (Figure~\ref{fig:map-reduce}) is designed using an Extract-Aggregate approach presented in our previous work~\cite{lfoppiano2023automatic}. 
-We define the collected data as ``SuperCon\textsuperscript{2} Database''.
-% The "Extraction Task" takes as input PDF documents, stores them and then processes them with Grobid-superconductors. 
-% Grobid-superconductors transform the PDF documents into a rich representation document containing the original text and the extracted information in JSON format, which we will refer to as \textit{structured documents}.  
-% The "Aggregation Task" takes in input the \textit{structured document} and transforms it to a table format where each row contains one material, its T\textsubscript{c} and their related properties (we refer to as \textit{summarised record}, or, simply \textit{record}).
-
-% The ingestion tasks (Extract and Aggregate) are implemented by asynchronous Python scripts and MongoDB, an open-source document database. 
-% that can run asynchronously either with a scheduler or using a publish-subscriber triggering mechanism. 
-% The storage is implemented using MongoDB\footnote{\url{https://www.mongodb.com}}, an open-source document database. 
-The database discussed here is divided into five data collections: a) the original PDF documents, b) structured data consisting of text and extracted information, c) aggregated tabularised data, d) processing status, and e) corrected training data. 
-Details of the data formats are provided in Appendix~\ref{subsec:data-formats}.
-
-% The database is divided into collections storing: a) the original PDF documents, b) the \textit{structured documents}: a structured representation of the original PDF document containing text and extract information by the "Extract Task", c) the \textit{summarised records}, a tabular format created by the "Aggregate Task", d) the processing status of each document (Section~\ref{subsec:curation-and-processing-logs}), and e) the collected training data (Section~\ref{subsec:feedback-loop-training-data}).
-% Details about the data formats are provided in the Appendix.
-% The original PDF document, the \textit{structured document} and the \textit{summarised records} are linked by the first 10 characters of the MD5 hash function on the binary content. 
+The subsequent sections, Section~\ref{sec:curation-workflow} describes the curation workflow and Section~\ref{sec:user-interface} the user interface on top of it.
+Finally, we discuss our evaluation experiments and results in Section~\ref{sec:results-and-evaluation}.  
 
 \section{Curation workflow}
 \label{sec:curation-workflow}
@@ -173,7 +157,7 @@ The error type values can be summarised as follows:
     \item \textbf{From table}: the entities Material $\rightarrow$ T\textsubscript{c} $\rightarrow$ Pressure are identified in a table. At the moment, table extraction is not performed
     \item \textbf{Extraction}: The material, temperature, and pressure are not extracted (no box) or extracted incorrectly. 
     \item \textbf{Linking}: The material is incorrectly linked to the T\textsubscript{c} given that the entities are correctly recognised.
-    \item \textbf{Tc classification}: The temperature is not correctly classified as ``superconductors critical temperature'' (e.g., Curie temperature, Magnetic temperature...).
+    \item \textbf{T\textsubscript{c} classification}: The temperature is not correctly classified as ``superconductors critical temperature'' (e.g., Curie temperature, Magnetic temperature...).
     \item \textbf{Composition resolution}: The exact composition cannot be resolved (e.g., the stoichiometric values cannot be resolved).
     \item \textbf{Value resolution}: The extracted formula contains variables that cannot be resolved, even after having read the paper. This includes when data is from tables
     \item \textbf{Anomaly detection}: The data has been modified by anomaly detection, which facilitates their retrieval from the interface.
@@ -287,7 +271,7 @@ Each example described the initial record, its context, the expected corrected r
 \label{subsec:curation-and-processing-logs}
 
 The Supercon\textsuperscript{2} interface gives access to information regarding the ingestion (processing log) and the curation process (curation log). 
-The processing log is filled up when the data is ingested, it was built to have minimal functions able to explain why certain documents haven't been processed (Figure~\ref{fig:processing-curation-log} top). 
+The processing log is filled up when the new data is ingested, it was built to have minimal functions able to explain why certain documents haven't been processed (Figure~\ref{fig:processing-curation-log} top). 
 For example, sometimes documents fail because they don't contain any text (image PDF documents) or they are too big (more than 100 pages). 
 % Grobid was built focusing on speed and robustness, and contains several fail-safe mechanisms to avoid crashing the system when a document is either too big or does not contains valuable information, for example, does not have any text. 
 % Old PDF documents (e.g. before 1990) are likely to have been scanned and contain only images. 
@@ -304,6 +288,7 @@ The curation log provides a view of what, when and how a record has been correct
 % \end{figure}
 
 \section{Results and evaluation}
+\label{sec:results-and-evaluation}
 
 In this section, we illustrate the experiments we have run to evaluate our work. 
 The evaluation is composed of three sets of results. 
@@ -392,11 +377,11 @@ The results of this experiment confirmed that our curation interface and workflo
 This work is available at \url{https://github.com/lfoppiano/supercon2}. The repository contains the code of the SuperCon\textsuperscript{2} interface, the curation workflow, and the ingestion processes for harvesting the SuperCon\textsuperscript{2} Database of materials and properties. The guidelines are accessible at \url{https://supercon2.readthedocs.io}.
 
 \section{Conclusions}
-We built a semi-automatic staging area, called SuperCon\textsuperscript{2}, to validate efficiently new experimental records automatically collected from superconductor research articles (SuperCon\textsuperscript{2} Database) before they are ingested into the existing, manually-build database of superconductors, SuperCon~\cite{ishii2023structuring}.
+We built a semi-automatic staging area, called SuperCon\textsuperscript{2}, to validate efficiently new experimental records automatically collected from superconductor research articles (SuperCon\textsuperscript{2} Database~\cite{lfoppiano2023automatic}) before they are ingested into the existing, manually-build database of superconductors, SuperCon~\cite{ishii2023structuring}.
 The system provides a curation workflow and a user interface (SuperCon\textsuperscript{2} Interface) tailored to efficiently support domain experts in data correction and validation with fast context switching and an enhanced PDF viewer.
 Under the hood, the workflow ran ``anomaly detection'' to automatically identify outliers and a ``training data collector'' based on human corrections, to efficiently accumulate training data to be feedback to the ML model. 
 
-Compared with the traditional manual approach of reading PDF documents and extracting information in an Excel file, SuperCon~\textsuperscript{2} significantly improves the curation quality by approximately 6\% and +47\% for precision and recall, respectively.
+Compared with the traditional manual approach of reading PDF documents and extracting information in an Excel file, SuperCon\textsuperscript{2} significantly improves the curation quality by approximately 6\% and +47\% for precision and recall, respectively.
 In future, this work can be expanded to support other materials science domains such as magnetic materials, spintronic and thermoelectric research and expanding the evaluation to a larger dataset. 
 
 % We measured that training data selected based on corrections can improve the machine learning models (f1-score improved by +0.77-0.81\%) using a reduced number of examples (+2\% training examples as compared with the initial dataset).
@@ -414,7 +399,7 @@ This work was partly supported by MEXT Program: Data Creation and Utilization-Ty
 
 
 \section*{Notes on Contributors}
-LF wrote the manuscript. 
+LF wrote the manuscript and KT helped with the editing. 
 LF and POS discussed the ML results and experiments. 
 LF implemented the workflow as a standalone service, and TM wrote the front end of the user interface. 
 LF designed the user interface experiment with KT, TT and WS as curators.
@@ -428,13 +413,13 @@ YT and MI supervised the work of the respective teams.
 
 \section*{Figures \& Tables}
 
-\begin{figure}[ht]
-  \centering
-  \includegraphics[width=\textwidth]{images/ingestion-schema.png} 
-  \caption{Ingestion process following the Extract-Aggregate approach. In the first phase, multiple PDF documents are transformed in sequence. First, the PDF document is stored (``binary'' collection) (0), processed by Grobid-superconductors~\cite{lfoppiano2023automatic} (``Extract Task'') (1), and the resulting \textit{structured document} (2) is stored (``Documents'' collection). 
-  Then, the ``Aggregate Task'' synthesises (3) each \textit{structured document} in multiple rows of a tabular format (4) we define as \textit{summarised record} (``tabular'' collection) .}
-  \label{fig:map-reduce}
-\end{figure}
+% \begin{figure}[ht]
+%   \centering
+%   \includegraphics[width=\textwidth]{images/ingestion-schema.png} 
+%   \caption{Ingestion process following the Extract-Aggregate approach. In the first phase, multiple PDF documents are transformed in sequence. First, the PDF document is stored (``binary'' collection) (0), processed by Grobid-superconductors~\cite{lfoppiano2023automatic} (``Extract Task'') (1), and the resulting \textit{structured document} (2) is stored (``Documents'' collection). 
+%   Then, the ``Aggregate Task'' synthesises (3) each \textit{structured document} in multiple rows of a tabular format (4) we define as \textit{summarised record} (``tabular'' collection) .}
+%   \label{fig:map-reduce}
+% \end{figure}
 
 \begin{figure}[ht]
   \centering
@@ -453,7 +438,7 @@ YT and MI supervised the work of the respective teams.
 \begin{figure}[ht]
   \centering
   \includegraphics[width=1\textwidth]{images/supercon-curation-database} 
-  \caption{Screenshot of SuperCon~\textsuperscript{2} interface showing the database. Each row corresponds to one material-T\textsubscript{c} pair. On top, there are searches by attribute, sorting and other filtering operations. On the right (last column) there are curation controls (mark as valid, update, etc.).   Records are grouped by document with alternating light yellow and white. }
+  \caption{Screenshot of SuperCon\textsuperscript{2} interface showing the database. Each row corresponds to one material-T\textsubscript{c} pair. On top, there are searches by attribute, sorting and other filtering operations. On the right (last column) there are curation controls (mark as valid, update, etc.).   Records are grouped by document with alternating light yellow and white. }
   \label{fig:curation-interface-database}
 \end{figure}
 
@@ -478,7 +463,7 @@ YT and MI supervised the work of the respective teams.
 \begin{figure}[ht]
   \centering
   \includegraphics[width=1\textwidth]{images/processing-curation-log.png} 
-  \caption{Top: \textit{Processing log}, showing the output of each operation (Extract or Aggregate (Section~\ref{sec:ingestion}) and the outcome with the detailed error that may have occurred. Bottom: \textit{Correction log}, indicating each record, the number of updates, and the date/time of the last updates. By clicking on the ``Record id'', is possible to visualise the latest record values.}
+  \caption{Top: \textit{Processing log}, showing the output of each ingestion operation and the outcome with the detailed error that may have occurred. Bottom: \textit{Correction log}, indicating each record, the number of updates, and the date/time of the last updates. By clicking on the ``Record id'', is possible to visualise the latest record values.}
   \label{fig:processing-curation-log}
 \end{figure}
 
@@ -515,7 +500,7 @@ Nb total examples & 16902 & 17254 & 16902(s), 17254 (i)\\
 \begin{table}[ht]
 \centering
 \small
-\caption{Data support: indicates the number of entities for each label in each training dataset}
+\caption{Data support, the number of entities for each label in each of the datasets used for evaluating the ML models. The \emph{base} dataset is the original dataset described in~\cite{foppiano2021supermat}, and the \emph{curation} dataset is automatically collected based on the database corrections by the interface and manually corrected.}
 \begin{tabular}{lccc}
 \toprule
                         & \textbf{base}     & \textbf{base+curation}    & \textbf{$\Delta$}  \\ 
@@ -551,7 +536,7 @@ Nb total examples & 16902 & 17254 & 16902(s), 17254 (i)\\
 
 \begin{table}[h]
 \centering
-\caption{Evaluation scores (P: precision, R: recall, F1: F1-score) aggregated by experience (MS: master student, PD: PhD student, SR: senior researcher). Each curator corrects 10 documents. Each pair of curators shares 5 documents which are curated with opposite methods (Interface or PDF document). The distribution of documents was optimised to allocate an equal number of pages to each curator.}
+\caption{Evaluation scores (P: precision, R: recall, F1: F1-score) aggregated by experience (MS: master student, PD: PhD student, SR: senior researcher). Each person corrected 10 documents.}
 \begin{tabular}{lrrrrr}
 \toprule
 \textbf{Experience} & \textbf{P (\%)}   & \textbf{R (\%)}   & \textbf{F1 (\%)}  & \textbf{\#  docs} & \textbf{\# pages}\\
