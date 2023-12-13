@@ -2,6 +2,7 @@ Repository of the article
 
 Luca Foppiano, Tomoya Mato, Kensei Terashima, Pedro Ortiz Suarez, Taku Tou, Chikako Sakai, Wei-Sheng Wang, Toshiyuki Amagasa, Yoshihiko Takano & Masashi Ishii (2023) Semi-automatic staging area for high-quality structured data extraction from scientific literature, Science and Technology of Advanced Materials: Methods, DOI: 10.1080/27660400.2023.2286219
 
+Code in https://github.com/lfoppiano/supercon2
 
 DOI: https://doi.org/10.1080/27660400.2023.2286219
 
